@@ -1,3 +1,7 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "script-src 'self';"
 [build]
   publish = "."
   functions = "netlify/functions"
