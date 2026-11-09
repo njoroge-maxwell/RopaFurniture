@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ropa Furniture — Admin</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#18130f;--linen:#faf6ef;--sand:#ece3d2;--line:#dccfb0;--amber:#c9793e;--teal:#2f6e74;--plum:#5b3b63;--red:#b3261e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--linen);color:var(--ink);font-family:'Work Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+[hidden]{display:none!important}
+a{color:inherit}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:500}
+.mono{font-family:'JetBrains Mono',monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:4px;font-weight:600;font-size:.85rem;text-decoration:none;transition:background .15s,transform .1s}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--ink);color:var(--linen)}.btn-p:hover:not(:disabled){background:var(--plum)}
+.btn-a{background:var(--amber);color:var(--ink)}
+.btn-g{border:1.5px solid var(--ink)}.btn-g:hover{background:var(--ink);color:var(--linen)}
+.btn-t{background:var(--teal);color:#fff}
+.btn-r{color:var(--red);border:1.5px solid var(--red)}.btn-r:hover{background:var(--red);color:#fff}
+.btn-s{padding:6px 11px;font-size:.78rem}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:4px;background:#fff;font:inherit;font-size:.9rem}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(47,110,116,.18)}
+textarea{resize:vertical;min-height:70px}
+label{display:block;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;opacity:.7;margin:10px 0 4px}
+.login{max-width:360px;margin:12vh auto;padding:28px;background:#fff;border:1px solid var(--line);border-radius:10px;text-align:center}
+.login img{width:64px;height:64px;border-radius:50%;margin:0 auto 12px}
+.login h1{font-size:1.5rem;margin-bottom:16px}
+.err{color:var(--red);font-size:.85rem;margin-top:10px;min-height:1.2em}
+header{background:var(--ink);color:var(--linen);position:sticky;top:0;z-index:20}
+.bar{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar .brand{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-size:1.1rem}
+.bar .brand img{width:30px;height:30px;border-radius:50%}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tabs button{padding:8px 14px;border-radius:4px;font-size:.85rem;opacity:.7}
+.tabs button.on{background:var(--amber);color:var(--ink);opacity:1;font-weight:600}
+.main{max-width:1200px;margin:0 auto;padding:18px 16px 80px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px}
+.stat b{display:block;font-family:'Fraunces',serif;font-size:1.5rem;font-weight:500}
+.stat span{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.tools input{max-width:240px}.tools select{max-width:200px}
+.wrap-t{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;opacity:.6;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover{background:var(--sand)}
+td.r,th.r{text-align:right}
+.badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:12px;border:1px solid var(--line);background:#fff;white-space:nowrap}
+.b-paid{background:var(--teal);color:#fff;border-color:var(--teal)}.b-part{background:var(--amber);border-color:var(--amber)}.b-unpaid{background:#fff}
+.b-cancelled{background:#ddd}
+.modal{position:fixed;inset:0;background:rgba(24,19,15,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+.sheet{background:var(--linen);border-radius:10px;width:min(820px,100%);padding:22px;position:relative}
+.sheet h2{font-size:1.5rem;margin-bottom:4px}
+.x{position:absolute;top:12px;right:14px;font-size:1.3rem;opacity:.6;padding:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:14px}
+.box h3{font-size:1.05rem;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:.9rem}
+.row.big{font-weight:600;border-top:1px solid var(--ink);margin-top:4px;padding-top:8px}
+.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}.inline>*{flex:1;min-width:110px}.inline .btn{flex:0 0 auto}
+.small{font-size:.78rem;opacity:.65}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.plist{display:grid;gap:8px}
+.prow{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
+.prow img{width:54px;height:54px;object-fit:cover;border-radius:6px;background:var(--sand);flex:0 0 auto}
+.prow .t{flex:1;min-width:0}.prow .t b{display:block}.prow .t span{font-size:.8rem;opacity:.65}
+.cat-h{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--plum);margin:20px 0 8px}
+.imgs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.imgs .im{position:relative;width:84px}
+.imgs img{width:84px;height:84px;object-fit:cover;border-radius:6px;border:2px solid var(--line)}
+.imgs .im:first-child img{border-color:var(--amber)}
+.imgs .im button{display:block;width:100%;font-size:.68rem;padding:3px 0;text-decoration:underline;opacity:.75}
+.hint{background:var(--sand);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.82rem;line-height:1.55;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--linen);padding:11px 18px;border-radius:6px;font-size:.85rem;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none;max-width:92vw}
+.toast.show{opacity:1}
+.stars{color:var(--amber)}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}.tabs{margin-left:0;width:100%}.tabs button{flex:1}}
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <img src="images/logo.png" alt="">
+  <h1>Ropa Furniture admin</h1>
+  <input id="pw" type="password" placeholder="Admin password" autocomplete="current-password">
+  <button class="btn btn-p" style="width:100%;margin-top:12px" onclick="login()">Log in</button>
+  <div class="err" id="login-err"></div>
+</div>
+
+<div id="app" hidden>
+  <header><div class="bar">
+    <div class="brand"><img src="images/logo.png" alt="">Ropa Furniture · Admin</div>
+    <div class="tabs" id="tabs">
+      <button data-t="orders" class="on">Orders</button><button data-t="products">Products</button><button data-t="reviews">Reviews</button>
+    </div>
+    <button class="btn btn-g btn-s" style="color:var(--linen);border-color:var(--linen)" onclick="logout()">Log out</button>
+  </div></header>
+  <div class="main">
+    <section id="t-orders"></section>
+    <section id="t-products" hidden></section>
+    <section id="t-reviews" hidden></section>
+  </div>
+</div>
+<div id="modal-host"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/.netlify/functions/";
+const SITE = location.origin;
+const SHOW = "0733 416 374";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (n) => "KSh " + Math.round(n).toLocaleString("en-KE");
+const dt = (iso) => new Date(iso).toLocaleString("en-KE", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const toast = (m, ms = 3500) => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms); };
+let PW = sessionStorage.getItem("ropa_admin") || "";
+async function call(body) {
+  const res = await fetch(API + "admin", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-password": PW }, body: JSON.stringify(body) });
+  const d = await res.json().catch(() => ({}));
+  if (res.status === 401) { logout(true); throw new Error("Wrong password"); }
+  if (!res.ok) throw new Error(d.error || "Something went wrong");
+  return d;
+}
+async function login() {
+  PW = $("#pw").value; $("#login-err").textContent = "";
+  try { await call({ action: "ping" }); sessionStorage.setItem("ropa_admin", PW); start(); }
+  catch (e) { $("#login-err").textContent = e.message; }
+}
+function logout(silent) { sessionStorage.removeItem("ropa_admin"); PW = ""; $("#app").hidden = true; $("#login").hidden = false; if (!silent) $("#pw").value = ""; }
+$("#pw").addEventListener("keydown", (e) => e.key === "Enter" && login());
+document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => tab(b.dataset.t)));
+function tab(t) {
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === t));
+  ["orders", "products", "reviews"].forEach((x) => ($("#t-" + x).hidden = x !== t));
+  if (t === "orders") loadOrders(); if (t === "products") loadProducts(); if (t === "reviews") loadReviews();
+}
+async function start() { $("#login").hidden = true; $("#app").hidden = false; tab("orders"); }
+function modal(html) { $("#modal-host").innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><button class="x" onclick="closeModal()" aria-label="Close">✕</button>${html}</div></div>`; }
+function closeModal() { $("#modal-host").innerHTML = ""; }
+const payWord = { unpaid: "Awaiting payment", part: "Part paid", paid: "Paid" };
+const fulWord = { new: "New", in_progress: "In production", ready: "Ready", delivered: "Delivered", cancelled: "Cancelled" };
+function waPhone(p) { let d = String(p).replace(/\D/g, ""); if (d.startsWith("0")) d = "254" + d.slice(1); else if (d.length === 9 && /^[17]/.test(d)) d = "254" + d; return d; }
+
+/* ================= ORDERS ================= */
+let ORDERS = [];
+async function loadOrders() {
+  $("#t-orders").innerHTML = `<p class="small">Loading orders…</p>`;
+  try { ORDERS = (await call({ action: "listOrders" })).orders; } catch (e) { $("#t-orders").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  drawOrders();
+}
+let flt = { status: "all", q: "" };
+function drawOrders() {
+  const live = ORDERS.filter((o) => o.fulfilment !== "cancelled");
+  const received = live.reduce((s, o) => s + o.paid, 0), owed = live.reduce((s, o) => s + Math.max(o.total - o.paid, 0), 0);
+  const stat = (k, n) => `<div class="stat"><b>${n}</b><span>${k}</span></div>`;
+  const rows = ORDERS.filter((o) => (flt.status === "all" ? true : flt.status === "cancelled" ? o.fulfilment === "cancelled" : o.fulfilment !== "cancelled" && o.payStatus === flt.status) && (!flt.q || (`#${o.number} ${o.name} ${o.phone} ${o.area} ${o.items}`).toLowerCase().includes(flt.q.toLowerCase())));
+  $("#t-orders").innerHTML = `
+    <div class="stats">${stat("Orders", ORDERS.length)}${stat("Awaiting payment", live.filter((o) => o.payStatus === "unpaid").length)}${stat("Part paid", live.filter((o) => o.payStatus === "part").length)}${stat("Paid", live.filter((o) => o.payStatus === "paid").length)}${stat("Money received", money(received))}${stat("Still owed", money(owed))}</div>
+    <div class="tools"><input id="q" placeholder="Search name, phone, order #…" value="${esc(flt.q)}">
+      <select id="st"><option value="all">All orders</option><option value="unpaid">Awaiting payment</option><option value="part">Part paid</option><option value="paid">Paid</option><option value="cancelled">Cancelled</option></select>
+      <button class="btn btn-g btn-s" onclick="loadOrders()">Refresh</button><button class="btn btn-g btn-s" onclick="exportCsv()">Export CSV</button></div>
+    <div class="wrap-t"><table><thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Items</th><th class="r">Total</th><th class="r">Paid</th><th>Payment</th><th>Order status</th></tr></thead><tbody>
+    ${rows.map((o) => `<tr class="click" onclick="openOrder(${o.number})"><td class="mono"><b>#${o.number}</b></td><td class="small">${dt(o.createdAt)}</td><td>${esc(o.name)}<div class="small">${esc(o.phone)} · ${esc(o.area)}</div></td><td class="small" style="max-width:260px">${esc(o.items)}</td><td class="r mono">${money(o.total)}</td><td class="r mono">${money(o.paid)}</td><td><span class="badge b-${o.payStatus}">${payWord[o.payStatus]}</span></td><td><span class="badge b-${o.fulfilment}">${fulWord[o.fulfilment] || o.fulfilment}</span></td></tr>`).join("") || `<tr><td colspan="8" style="text-align:center;padding:30px;opacity:.6">No orders to show.</td></tr>`}
+    </tbody></table></div>`;
+  $("#st").value = flt.status;
+  $("#st").onchange = (e) => { flt.status = e.target.value; drawOrders(); };
+  $("#q").oninput = (e) => { flt.q = e.target.value; const pos = e.target.selectionStart; drawOrders(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
+}
+function exportCsv() {
+  const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["Order", "Date", "Customer", "Phone", "Delivery", "Items", "Total", "Paid", "Balance", "Payment status", "Order status"].map(q).join(",")];
+  ORDERS.forEach((o) => lines.push([o.number, o.createdAt, o.name, o.phone, o.area, o.items, o.total, o.paid, o.total - o.paid, payWord[o.payStatus], fulWord[o.fulfilment]].map(q).join(",")));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv" })); a.download = "ropa-orders.csv"; a.click();
+}
+const optText = (o) => Object.values(o || {}).join(" · ");
+async function openOrder(n) {
+  let o; try { o = (await call({ action: "getOrder", number: n })).order; } catch (e) { return toast(e.message); }
+  const link = `${SITE}/?o=${o.token}`, bal = Math.max(o.total - o.paid, 0);
+  const inv = `Hello ${o.customer.name}, thank you for your order #${o.number} with Ropa Furniture. The total is ${money(o.total)}. You can view your proforma invoice and pay online here: ${link}`;
+  const rec = `Hello ${o.customer.name}, we have received ${money(o.paid)} for your order #${o.number} (Ropa Furniture).${bal > 0 ? " The balance is " + money(bal) + "." : " Your order is fully paid."} Your receipt is here: ${link}`;
+  const wa = (m) => `https://wa.me/${waPhone(o.customer.phone)}?text=${encodeURIComponent(m)}`;
+  modal(`<h2>Order #${o.number}</h2><p class="small">${dt(o.createdAt)} · <span class="badge b-${o.payStatus}">${payWord[o.payStatus]}</span></p>
+  <div class="grid2">
+   <div class="box"><h3>Customer</h3><div class="row"><span>${esc(o.customer.name)}</span></div><div class="row"><a href="tel:${esc(o.customer.phone)}">${esc(o.customer.phone)}</a></div>${o.customer.email ? `<div class="row"><a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a></div>` : ""}<div class="row small">Deliver to: ${esc(o.customer.area)}</div>${o.customer.note ? `<div class="hint">Customer note: ${esc(o.customer.note)}</div>` : ""}</div>
+   <div class="box"><h3>Order status</h3><select id="ful">${Object.entries(fulWord).map(([k, v]) => `<option value="${k}" ${o.fulfilment === k ? "selected" : ""}>${v}</option>`).join("")}</select>
+     <label>Private notes (customers never see these)</label><textarea id="notes">${esc(o.notes || "")}</textarea><button class="btn btn-g btn-s" style="margin-top:8px" onclick="saveNotes(${o.number})">Save notes</button></div>
+  </div>
+  <div class="box"><h3>Items</h3>${o.items.map((i) => `<div class="row"><span>${esc(i.name)} × ${i.qty}<div class="small">${esc(optText(i.options))}</div></span><span class="mono">${money(i.price * i.qty)}</span></div>`).join("")}
+    ${(o.adjustments || []).map((a, idx) => `<div class="row"><span>${esc(a.label)} <button class="small" style="text-decoration:underline" onclick="rmAdj(${o.number},${idx})">remove</button></span><span class="mono">${a.amount < 0 ? "−" : ""}${money(Math.abs(a.amount))}</span></div>`).join("")}
+    <div class="row big"><span>Total</span><span class="mono">${money(o.total)}</span></div><div class="row"><span>Paid</span><span class="mono">${money(o.paid)}</span></div><div class="row"><span>Balance</span><b class="mono">${money(bal)}</b></div>
+    <label>Add a delivery fee, discount or other change to the total</label>
+    <div class="inline"><div><input id="adj-l" placeholder="e.g. Delivery to Mombasa"></div><div><input id="adj-a" inputmode="numeric" placeholder="Amount (minus for discount)"></div><button class="btn btn-g btn-s" onclick="addAdj(${o.number})">Add</button></div></div>
+  <div class="box"><h3>Payments</h3>${(o.payments || []).map((p) => `<div class="row"><span>${dt(p.date)} · ${esc(p.method === "paystack" ? "Online (Paystack" + (p.channel ? ", " + p.channel : "") + ")" : p.method)}${p.ref && p.method !== "paystack" ? " · " + esc(p.ref) : ""}${p.note ? `<div class="small">${esc(p.note)}</div>` : ""}</span><span class="mono">${money(p.amount)} ${p.method !== "paystack" ? `<button class="small" style="text-decoration:underline" onclick="rmPay(${o.number},'${esc(p.id)}')">remove</button>` : ""}</span></div>`).join("") || `<p class="small">No payments yet.</p>`}
+    <label>Record a payment received another way (cash, M-Pesa, bank…)</label>
+    <div class="inline"><div><input id="pay-a" inputmode="numeric" placeholder="Amount (KSh)"></div><div><select id="pay-m"><option value="mpesa">M-Pesa</option><option value="cash">Cash</option><option value="bank">Bank</option><option value="card">Card</option><option value="other">Other</option></select></div><div><input id="pay-r" placeholder="M-Pesa code / reference"></div><button class="btn btn-t btn-s" onclick="addPay(${o.number})">Record payment</button></div></div>
+  <div class="box"><h3>Customer documents</h3><p class="small">Opens WhatsApp with a ready-written message to ${esc(o.customer.phone)}; you just tap send. The link takes them to their order page where they can download the PDF.</p>
+    <div class="acts"><a class="btn btn-t" target="_blank" rel="noopener" href="${wa(inv)}">Send invoice on WhatsApp</a>${o.paid > 0 ? `<a class="btn btn-t" target="_blank" rel="noopener" href="${wa(rec)}">Send receipt on WhatsApp</a>` : ""}<a class="btn btn-g" target="_blank" rel="noopener" href="${esc(link)}">Open customer's order page</a></div></div>
+  <div class="acts" style="justify-content:space-between"><span></span><button class="btn btn-r btn-s" onclick="delOrder(${o.number})">Delete this order</button></div>`);
+  $("#ful").onchange = async (e) => { try { await call({ action: "setFulfilment", number: o.number, status: e.target.value }); toast("Status updated"); loadOrdersSilent(); } catch (er) { toast(er.message); } };
+}
+async function loadOrdersSilent() { try { ORDERS = (await call({ action: "listOrders" })).orders; drawOrders(); } catch (_) {} }
+async function again(n) { await loadOrdersSilent(); openOrder(n); }
+async function saveNotes(n) { try { await call({ action: "setNotes", number: n, notes: $("#notes").value }); toast("Notes saved"); } catch (e) { toast(e.message); } }
+async function addAdj(n) { try { await call({ action: "addAdjustment", number: n, label: $("#adj-l").value, amount: $("#adj-a").value }); toast("Total updated"); again(n); } catch (e) { toast(e.message, 5000); } }
+async function rmAdj(n, i) { try { await call({ action: "removeAdjustment", number: n, index: i }); again(n); } catch (e) { toast(e.message); } }
+async function addPay(n) { try { await call({ action: "addPayment", number: n, amount: $("#pay-a").value, method: $("#pay-m").value, ref: $("#pay-r").value }); toast("Payment recorded"); again(n); } catch (e) { toast(e.message, 5000); } }
+async function rmPay(n, id) { if (!confirm("Remove this recorded payment?")) return; try { await call({ action: "removePayment", number: n, id }); again(n); } catch (e) { toast(e.message); } }
+async function delOrder(n) { if (!confirm(`Delete order #${n} permanently? This is meant for test orders.`)) return; try { await call({ action: "deleteOrder", number: n }); closeModal(); toast("Order deleted"); loadOrders(); } catch (e) { toast(e.message); } }
+
+/* ================= PRODUCTS ================= */
+let CAT = { categories: [], products: [] };
+async function loadProducts() {
+  $("#t-products").innerHTML = `<p class="small">Loading products…</p>`;
+  try { CAT = await call({ action: "getCatalog" }); } catch (e) { $("#t-products").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  drawProducts();
+}
+function drawProducts() {
+  const cats = [...new Set([...CAT.categories, ...CAT.products.map((p) => p.category)])];
+  $("#t-products").innerHTML = `<div class="tools"><button class="btn btn-a" onclick="editProduct(null)">+ Add a product</button><span class="small">Changes appear on the website straight away. Products with no price show "Price on request" and can't be ordered online.</span></div>
+   ${cats.map((c) => `<div class="cat-h">${esc(c)}</div><div class="plist">${CAT.products.filter((p) => p.category === c).map((p) => `<div class="prow"><img src="${esc(p.images?.[0] || "")}" alt=""><div class="t"><b>${esc(p.name)}${p.hidden ? ' <span class="badge">Hidden</span>' : ""}</b><span>${p.price ? money(p.price) : "Price on request"}${(p.options || []).length ? " · " + esc(p.options.map((o) => o.name).join(", ")) : ""}</span></div><button class="btn btn-g btn-s" onclick="editProduct(${p.id})">Edit</button></div>`).join("")}</div>`).join("")}`;
+}
+let EDIT = null;
+function editProduct(id) {
+  const p = id === null ? { id: Math.max(0, ...CAT.products.map((x) => x.id)) + 1, name: "", category: "", price: null, description: "", specs: [], options: [], images: [], hidden: false, _new: true } : structuredClone(CAT.products.find((x) => x.id === id));
+  EDIT = p; drawEdit();
+}
+function drawEdit() {
+  const p = EDIT, cats = [...new Set([...CAT.categories, ...CAT.products.map((x) => x.category)])];
+  modal(`<h2>${p._new ? "Add a product" : "Edit " + esc(p.name)}</h2>
+  <label>Name</label><input id="e-name" value="${esc(p.name)}">
+  <div class="grid2"><div><label>Category (pick one or type a new one)</label><input id="e-cat" list="cats" value="${esc(p.category)}"><datalist id="cats">${cats.map((c) => `<option value="${esc(c)}">`).join("")}</datalist></div>
+   <div><label>Price in KSh (leave empty for "Price on request")</label><input id="e-price" inputmode="numeric" value="${p.price || ""}"></div></div>
+  <label>Description</label><textarea id="e-desc">${esc(p.description)}</textarea>
+  <label>Choices for the customer (one per line, like <span class="mono">Wood: Mango wood, Mahogany</span>)</label>
+  <textarea id="e-opts" placeholder="Wood: Mango wood, Mahogany&#10;Cord colour: Tan, Black">${esc((p.options || []).map((o) => o.name + ": " + o.values.join(", ")).join("\n"))}</textarea>
+  <label>Specifications (one per line, like <span class="mono">Width: 80 cm</span>)</label>
+  <textarea id="e-specs" placeholder="Width: 80 cm&#10;Height: 45 cm">${esc((p.specs || []).map((s) => s.label + ": " + s.value).join("\n"))}</textarea>
+  <label>Photos (the first one is the main photo)</label>
+  <div class="imgs" id="e-imgs">${(p.images || []).map((u, i) => `<div class="im"><img src="${esc(u)}" alt="">${i > 0 ? `<button onclick="imgFirst(${i})">Make main</button>` : `<button disabled>Main photo</button>`}<button onclick="imgDel(${i})">Remove</button></div>`).join("")}</div>
+  <input type="file" id="e-file" accept="image/*" multiple>
+  <div class="small" id="e-up" style="margin-top:6px"></div>
+  <label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:.9rem;opacity:1;margin-top:14px"><input type="checkbox" id="e-hid" style="width:auto" ${p.hidden ? "checked" : ""}> Hide this product from the website</label>
+  <div class="acts"><button class="btn btn-p" onclick="saveProduct()">Save product</button>${p._new ? "" : `<button class="btn btn-r" onclick="deleteProduct()">Delete</button>`}<button class="btn btn-g" onclick="closeModal()">Cancel</button></div>`);
+  $("#e-file").addEventListener("change", uploadPhotos);
+}
+function grab() {
+  const p = EDIT;
+  p.name = $("#e-name").value.trim(); p.category = $("#e-cat").value.trim(); const pr = $("#e-price").value.replace(/\D/g, ""); p.price = pr ? parseInt(pr, 10) : null; p.description = $("#e-desc").value.trim(); p.hidden = $("#e-hid").checked;
+  const lines = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean);
+  p.options = lines($("#e-opts").value).map((l) => { const i = l.indexOf(":"); return i < 0 ? null : { name: l.slice(0, i).trim(), values: l.slice(i + 1).split(",").map((v) => v.trim()).filter(Boolean) }; }).filter((o) => o && o.name && o.values.length);
+  p.specs = lines($("#e-specs").value).map((l) => { const i = l.indexOf(":"); return i < 0 ? null : { label: l.slice(0, i).trim(), value: l.slice(i + 1).trim() }; }).filter((s) => s && s.label && s.value);
+}
+function imgDel(i) { grab(); EDIT.images.splice(i, 1); drawEdit(); }
+function imgFirst(i) { grab(); const [u] = EDIT.images.splice(i, 1); EDIT.images.unshift(u); drawEdit(); }
+function shrink(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const m = 1200, s = Math.min(1, m / Math.max(img.width, img.height)), c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", 0.82)); };
+    img.onerror = () => rej(new Error("That file isn't a photo we can read.")); img.src = url;
+  });
+}
+async function uploadPhotos(e) {
+  grab(); const files = [...e.target.files]; const note = $("#e-up");
+  for (let i = 0; i < files.length; i++) {
+    note.textContent = `Uploading photo ${i + 1} of ${files.length}…`;
+    try { const d = await shrink(files[i]); const r = await call({ action: "uploadImage", dataUrl: d }); EDIT.images.push(r.url); } catch (er) { toast(er.message, 5000); }
+  }
+  drawEdit();
+}
+async function saveProduct() {
+  grab(); const p = EDIT;
+  if (!p.name || !p.category) return toast("Please give the product a name and a category.");
+  const next = structuredClone(CAT); delete p._new;
+  const i = next.products.findIndex((x) => x.id === p.id); if (i >= 0) next.products[i] = p; else next.products.push(p);
+  try { const r = await call({ action: "saveCatalog", catalog: next }); CAT = r.catalog; closeModal(); drawProducts(); toast("Saved. It's live on the website."); } catch (e) { toast(e.message, 6000); }
+}
+async function deleteProduct() {
+  if (!confirm(`Delete "${EDIT.name}" permanently? (To just remove it from the website for now, use "Hide" instead.)`)) return;
+  const next = structuredClone(CAT); next.products = next.products.filter((x) => x.id !== EDIT.id);
+  try { const r = await call({ action: "saveCatalog", catalog: next }); CAT = r.catalog; closeModal(); drawProducts(); toast("Deleted"); } catch (e) { toast(e.message, 6000); }
+}
+
+/* ================= REVIEWS ================= */
+async function loadReviews() {
+  $("#t-reviews").innerHTML = `<p class="small">Loading reviews…</p>`;
+  let rv; try { rv = (await call({ action: "listReviews" })).reviews; } catch (e) { $("#t-reviews").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const card = (r) => `<div class="prow" style="align-items:flex-start"><div class="t"><b><span class="stars">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span> ${esc(r.name)}${r.product ? " · " + esc(r.product) : ""}</b><span>${esc(r.comment)}</span><span class="small" style="display:block;margin-top:4px">${dt(r.date)}</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px"><button class="btn ${r.approved ? "btn-g" : "btn-t"} btn-s" onclick="setReview('${r.id}',${!r.approved})">${r.approved ? "Hide from website" : "Approve"}</button><button class="btn btn-r btn-s" onclick="delReview('${r.id}')">Delete</button></div></div>`;
+  const pend = rv.filter((r) => !r.approved), ok = rv.filter((r) => r.approved);
+  $("#t-reviews").innerHTML = `<div class="cat-h">Waiting for approval (${pend.length})</div><div class="plist">${pend.map(card).join("") || '<p class="small">Nothing waiting.</p>'}</div>
+   <div class="cat-h">Showing on the website (${ok.length})</div><div class="plist">${ok.map(card).join("") || '<p class="small">No approved reviews yet.</p>'}</div>
+   <div class="box"><h3>Add a review yourself</h3><p class="small">For example, a kind comment a customer sent you. Only add real feedback from real customers.</p>
+   <div class="inline"><div><label>Customer name</label><input id="ar-n"></div><div><label>Stars (1-5)</label><input id="ar-s" inputmode="numeric" value="5"></div><div><label>Piece (optional)</label><input id="ar-p"></div></div><label>Comment</label><textarea id="ar-c"></textarea><button class="btn btn-p" style="margin-top:8px" onclick="addReview()">Add and publish</button></div>`;
+}
+async function setReview(id, approved) { try { await call({ action: "setReview", id, approved }); loadReviews(); } catch (e) { toast(e.message); } }
+async function delReview(id) { if (!confirm("Delete this review?")) return; try { await call({ action: "deleteReview", id }); loadReviews(); } catch (e) { toast(e.message); } }
+async function addReview() { try { await call({ action: "addReview", name: $("#ar-n").value, rating: $("#ar-s").value, product: $("#ar-p").value, comment: $("#ar-c").value }); toast("Review published"); loadReviews(); } catch (e) { toast(e.message, 5000); } }
+
+if (PW) call({ action: "ping" }).then(start).catch(() => logout(true));
+</script>
+</body>
+</html>
