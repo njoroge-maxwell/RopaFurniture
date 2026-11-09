@@ -1,7 +1,3 @@
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'self' https:; script-src 'self' https:; style-src 'self' 'unsafe-inline' https:; frame-src 'self';"
 [build]
   publish = "."
   functions = "netlify/functions"
