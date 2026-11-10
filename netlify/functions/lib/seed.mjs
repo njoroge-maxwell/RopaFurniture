@@ -383,7 +383,7 @@ export default {
    "name": "Barrel Sauna",
    "category": "Sauna",
    "price": null,
-   "description": "A handcrafted barrel sauna with a porch, glass door, two front windows, slatted benches and a wood-burning heater.",
+   "description": "A handcrafted barrel sauna with a porch, glass door, two front windows and slatted benches. Choose a wood-burning or an electric heater.",
    "specs": [
     {
      "label": "Size",
@@ -426,11 +426,25 @@ export default {
      "value": "61 × 51 cm (24 × 20 in)"
     },
     {
-     "label": "Height with wood-burning heater chimney",
+     "label": "Height with wood-burner chimney",
      "value": "About 314 cm (123½ in)"
     }
    ],
-   "options": [],
+   "options": [
+    {
+     "name": "Heater",
+     "values": [
+      {
+       "name": "Wood burner",
+       "price": 400000
+      },
+      {
+       "name": "Electric burner",
+       "price": 300000
+      }
+     ]
+    }
+   ],
    "images": [
     "images/barrel-sauna.jpg"
    ],

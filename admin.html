@@ -224,7 +224,20 @@ async function loadProducts() {
 function drawProducts() {
   const cats = [...new Set([...CAT.categories, ...CAT.products.map((p) => p.category)])];
   $("#t-products").innerHTML = `<div class="tools"><button class="btn btn-a" onclick="editProduct(null)">+ Add a product</button><span class="small">Changes appear on the website straight away. Products with no price show "Price on request" and can't be ordered online.</span></div>
-   ${cats.map((c) => `<div class="cat-h">${esc(c)}</div><div class="plist">${CAT.products.filter((p) => p.category === c).map((p) => `<div class="prow"><img src="${esc(p.images?.[0] || "")}" alt=""><div class="t"><b>${esc(p.name)}${p.hidden ? ' <span class="badge">Hidden</span>' : ""}</b><span>${p.price ? money(p.price) : "Price on request"}${(p.options || []).length ? " · " + esc(p.options.map((o) => o.name).join(", ")) : ""}</span></div><button class="btn btn-g btn-s" onclick="editProduct(${p.id})">Edit</button></div>`).join("")}</div>`).join("")}`;
+   ${cats.map((c) => `<div class="cat-h">${esc(c)}</div><div class="plist">${CAT.products.filter((p) => p.category === c).map((p) => `<div class="prow"><img src="${esc(p.images?.[0] || "")}" alt=""><div class="t"><b>${esc(p.name)}${p.hidden ? ' <span class="badge">Hidden</span>' : ""}</b><span>${adminPrice(p)}${(p.options || []).length ? " · " + esc(p.options.map((o) => o.name).join(", ")) : ""}</span></div><button class="btn btn-g btn-s" onclick="editProduct(${p.id})">Edit</button></div>`).join("")}</div>`).join("")}`;
+}
+function adminPrice(p) {
+  if (p.price) return money(p.price);
+  const ps = (p.options || []).flatMap((o) => o.values.filter((v) => v.price).map((v) => v.price));
+  return ps.length ? "From " + money(Math.min(...ps)) + " (price set by the choice)" : "Price on request";
+}
+const valText = (v) => v.name + (v.price ? " = " + v.price : v.add ? (v.add > 0 ? " + " : " - ") + Math.abs(v.add) : "");
+function parseVal(tok) {
+  tok = tok.trim(); let m;
+  if ((m = /^(.+?)\s*=\s*(\d[\d,]*)$/.exec(tok))) return { name: m[1].trim(), price: parseInt(m[2].replace(/,/g, ""), 10) };
+  if ((m = /^(.+?)\s*\+\s*(\d[\d,]*)$/.exec(tok))) return { name: m[1].trim(), add: parseInt(m[2].replace(/,/g, ""), 10) };
+  if ((m = /^(.+?)\s+-\s*(\d[\d,]*)$/.exec(tok))) return { name: m[1].trim(), add: -parseInt(m[2].replace(/,/g, ""), 10) };
+  return { name: tok };
 }
 let EDIT = null;
 function editProduct(id) {
@@ -238,8 +251,9 @@ function drawEdit() {
   <div class="grid2"><div><label>Category (pick one or type a new one)</label><input id="e-cat" list="cats" value="${esc(p.category)}"><datalist id="cats">${cats.map((c) => `<option value="${esc(c)}">`).join("")}</datalist></div>
    <div><label>Price in KSh (leave empty for "Price on request")</label><input id="e-price" inputmode="numeric" value="${p.price || ""}"></div></div>
   <label>Description</label><textarea id="e-desc">${esc(p.description)}</textarea>
-  <label>Choices for the customer (one per line, like <span class="mono">Wood: Mango wood, Mahogany</span>)</label>
-  <textarea id="e-opts" placeholder="Wood: Mango wood, Mahogany&#10;Cord colour: Tan, Black">${esc((p.options || []).map((o) => o.name + ": " + o.values.join(", ")).join("\n"))}</textarea>
+  <label>Choices for the customer (one group per line, like <span class="mono">Wood: Mango wood, Mahogany</span>)</label>
+  <textarea id="e-opts" placeholder="Wood: Mango wood, Mahogany&#10;Cord colour: Tan, Black">${esc((p.options || []).map((o) => o.name + ": " + o.values.map(valText).join(", ")).join("\n"))}</textarea>
+  <div class="hint">To make a choice change the price, write the amount after it. <b>Sets the price:</b> <span class="mono">Heater: Wood burner = 400000, Electric burner = 300000</span> (leave the main price empty). <b>Adds to the price:</b> <span class="mono">Wood: Mango wood, Mahogany + 5000</span>.</div>
   <label>Specifications (one per line, like <span class="mono">Width: 80 cm</span>)</label>
   <textarea id="e-specs" placeholder="Width: 80 cm&#10;Height: 45 cm">${esc((p.specs || []).map((s) => s.label + ": " + s.value).join("\n"))}</textarea>
   <label>Photos (the first one is the main photo)</label>
@@ -254,7 +268,7 @@ function grab() {
   const p = EDIT;
   p.name = $("#e-name").value.trim(); p.category = $("#e-cat").value.trim(); const pr = $("#e-price").value.replace(/\D/g, ""); p.price = pr ? parseInt(pr, 10) : null; p.description = $("#e-desc").value.trim(); p.hidden = $("#e-hid").checked;
   const lines = (t) => t.split("\n").map((l) => l.trim()).filter(Boolean);
-  p.options = lines($("#e-opts").value).map((l) => { const i = l.indexOf(":"); return i < 0 ? null : { name: l.slice(0, i).trim(), values: l.slice(i + 1).split(",").map((v) => v.trim()).filter(Boolean) }; }).filter((o) => o && o.name && o.values.length);
+  p.options = lines($("#e-opts").value).map((l) => { const i = l.indexOf(":"); return i < 0 ? null : { name: l.slice(0, i).trim(), values: l.slice(i + 1).split(",").map(parseVal).filter((v) => v.name) }; }).filter((o) => o && o.name && o.values.length);
   p.specs = lines($("#e-specs").value).map((l) => { const i = l.indexOf(":"); return i < 0 ? null : { label: l.slice(0, i).trim(), value: l.slice(i + 1).trim() }; }).filter((s) => s && s.label && s.value);
 }
 function imgDel(i) { grab(); EDIT.images.splice(i, 1); drawEdit(); }

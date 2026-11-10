@@ -29,7 +29,13 @@ function cleanCatalog(input, existing) {
       id, name, category, price: price || null, hidden: !!p.hidden,
       description: clean(p.description, 1200),
       specs: (Array.isArray(p.specs) ? p.specs : []).slice(0, 30).map((x) => ({ label: clean(x.label, 60), value: clean(x.value, 200) })).filter((x) => x.label && x.value),
-      options: (Array.isArray(p.options) ? p.options : []).slice(0, 5).map((g) => ({ name: clean(g.name, 40), values: (Array.isArray(g.values) ? g.values : []).slice(0, 12).map((v) => clean(v, 40)).filter(Boolean) })).filter((g) => g.name && g.values.length),
+      options: (Array.isArray(p.options) ? p.options : []).slice(0, 5).map((g) => ({ name: clean(g.name, 40), values: (Array.isArray(g.values) ? g.values : []).slice(0, 12).map((v) => {
+        const o = typeof v === "string" ? { name: v } : v, name = clean(o.name, 40), pr = Number(o.price), ad = Number(o.add);
+        if (!name) return null;
+        if (o.price != null && o.price !== "" && (!Number.isInteger(pr) || pr <= 0)) throw new Error(`The price for "${name}" must be a whole number of shillings`);
+        if (o.add != null && o.add !== "" && !Number.isInteger(ad)) throw new Error(`The extra amount for "${name}" must be a whole number of shillings`);
+        return { name, ...(Number.isInteger(pr) && pr > 0 ? { price: pr } : {}), ...(Number.isInteger(ad) && ad !== 0 ? { add: ad } : {}) };
+      }).filter(Boolean) })).filter((g) => g.name && g.values.length),
       images,
     };
   });

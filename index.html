@@ -333,6 +333,18 @@ let myOrders = store.get("ropa_orders", []);          // [{token, number}]
 const byId = (id) => CATALOG.products.find((p) => p.id == id);
 const optKey = (o) => JSON.stringify(Object.keys(o || {}).sort().map((k) => [k, o[k]]));
 const optText = (o) => Object.values(o || {}).join(" · ");
+function unitPrice(p, sel) {            // same rule as the server: a choice can set the price ("price") or adjust it ("add")
+  let price = Number.isInteger(p.price) && p.price > 0 ? p.price : null, add = 0;
+  for (const g of p.options || []) { const v = g.values.find((x) => x.name === sel?.[g.name]) || g.values[0]; if (!v) continue; if (Number.isInteger(v.price) && v.price > 0) price = v.price; if (Number.isInteger(v.add)) add += v.add; }
+  return price === null ? null : price + add;
+}
+function priceRange(p) {
+  let combos = [{}];
+  for (const g of p.options || []) { const next = []; for (const c of combos) for (const v of g.values) next.push({ ...c, [g.name]: v.name }); combos = next.slice(0, 300); }
+  const ps = combos.map((c) => unitPrice(p, c)).filter((x) => Number.isInteger(x) && x > 0);
+  return ps.length ? { min: Math.min(...ps), max: Math.max(...ps) } : null;
+}
+const chipLabel = (v) => esc(v.name) + (v.price ? ` · ${fmt(v.price)}` : v.add ? ` (${v.add > 0 ? "+" : "−"}${fmt(Math.abs(v.add))})` : "");
 const saveCart = () => store.set("ropa_cart_v2", cart);
 
 /* ================= scroll reveal, tilt, progress ================= */
@@ -370,7 +382,7 @@ function renderHome() {
   const shelf = []; const seen = new Set();
   for (const p of CATALOG.products) { if (!seen.has(p.category) && p.images?.[0]) { seen.add(p.category); shelf.push(p); } }
   CATALOG.products.forEach((p) => { if (shelf.length < 6 && !shelf.includes(p) && p.images?.[0]) shelf.push(p); });
-  const woods = [...new Set(CATALOG.products.flatMap((p) => (p.options || []).filter((o) => /wood/i.test(o.name)).flatMap((o) => o.values)))];
+  const woods = [...new Set(CATALOG.products.flatMap((p) => (p.options || []).filter((o) => /wood/i.test(o.name)).flatMap((o) => o.values.map((v) => v.name))))];
   const count = (c) => CATALOG.products.filter((p) => p.category === c).length;
   setView(`
   <section class="hero">
@@ -446,7 +458,7 @@ async function submitReview(e) {
 }
 
 /* ================= category ================= */
-function priceHtml(p) { return Number.isInteger(p.price) && p.price > 0 ? `<div class="price">${fmt(p.price)}</div>` : `<div class="price req">Price on request</div>`; }
+function priceHtml(p) { const r = priceRange(p); return r ? `<div class="price">${r.min < r.max ? "From " : ""}${fmt(r.min)}</div>` : `<div class="price req">Price on request</div>`; }
 function renderCategory(sl) {
   const cat = CATALOG.categories.find((c) => slug(c) === sl);
   if (!cat) return setView(`<div class="wrap"><p class="crumb"><a href="#/">← All collections</a></p><h1 class="sec-title">Collection not found</h1></div>`, "Not found");
@@ -465,22 +477,27 @@ function renderProduct(id) {
   const p = byId(id);
   if (!p) return setView(`<div class="wrap"><p class="crumb"><a href="#/">← All collections</a></p><h1 class="sec-title">Product not found</h1></div>`, "Not found");
   qtyNow = 1;
-  sel[p.id] = sel[p.id] || Object.fromEntries((p.options || []).map((o) => [o.name, o.values[0]]));
-  const orderable = Number.isInteger(p.price) && p.price > 0;
+  sel[p.id] = sel[p.id] || Object.fromEntries((p.options || []).map((o) => [o.name, o.values[0].name]));
   setView(`<div class="wrap"><p class="crumb"><a href="#/">Collections</a> / <a href="#/c/${slug(p.category)}">${esc(p.category)}</a></p>
     <div class="prod">
       <div><div class="gal-main"><img id="gal-img" src="${esc(p.images?.[0] || "")}" alt="${esc(p.name)}"></div>
         ${(p.images || []).length > 1 ? `<div class="thumbs">${p.images.map((u, i) => `<button class="${i === 0 ? "on" : ""}" data-i="${i}" aria-label="Photo ${i + 1}"><img src="${esc(u)}" alt=""></button>`).join("")}</div>` : ""}</div>
       <div>
-        <p class="eyebrow">${esc(p.category)}</p><h1>${esc(p.name)}</h1>${priceHtml(p)}
+        <p class="eyebrow">${esc(p.category)}</p><h1>${esc(p.name)}</h1><div id="pricebox"></div>
         ${p.description ? `<p class="desc">${esc(p.description)}</p>` : ""}
-        ${(p.options || []).map((g) => `<div class="optgroup"><div class="lbl">${esc(g.name)}</div><div class="chips">${g.values.map((v) => `<button class="chip${sel[p.id][g.name] === v ? " sel" : ""}" data-g="${esc(g.name)}" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div></div>`).join("")}
-        ${orderable ? `<div class="buyrow"><div class="qtybox"><button onclick="qtyStep(-1)" aria-label="Less">−</button><span id="q-now">1</span><button onclick="qtyStep(1)" aria-label="More">+</button></div><button class="btn btn-primary" id="add-btn" onclick="addToOrder(${p.id})">Add to order</button></div>`
-          : `<div class="quote">This piece is made to order, so the price depends on your requirements. Call or WhatsApp us on <a href="tel:+254${CONTACT_TEL.slice(1)}">${CONTACT_SHOW}</a> for a quote.</div>`}
+        ${(p.options || []).map((g) => `<div class="optgroup"><div class="lbl">${esc(g.name)}</div><div class="chips">${g.values.map((v) => `<button class="chip${sel[p.id][g.name] === v.name ? " sel" : ""}" data-g="${esc(g.name)}" data-v="${esc(v.name)}">${chipLabel(v)}</button>`).join("")}</div></div>`).join("")}
+        <div id="buybox"></div>
         ${(p.specs || []).length ? `<div class="specs"><h3>Specifications</h3><dl>${p.specs.map((s) => `<dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd>`).join("")}</dl></div>` : ""}
       </div></div></div>`, p.name);
   document.querySelectorAll(".thumbs button").forEach((b) => b.addEventListener("click", () => { $("#gal-img").src = p.images[+b.dataset.i]; document.querySelectorAll(".thumbs button").forEach((x) => x.classList.toggle("on", x === b)); }));
-  document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => { sel[p.id][c.dataset.g] = c.dataset.v; c.parentElement.querySelectorAll(".chip").forEach((x) => x.classList.toggle("sel", x === c)); }));
+  document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => { sel[p.id][c.dataset.g] = c.dataset.v; c.parentElement.querySelectorAll(".chip").forEach((x) => x.classList.toggle("sel", x === c)); drawBuy(p); }));
+  drawBuy(p);
+}
+function drawBuy(p) {      // price + "Add to order" for the choices currently selected
+  const unit = unitPrice(p, sel[p.id]);
+  $("#pricebox").innerHTML = unit ? `<div class="price" id="p-price">${fmt(unit)}</div>` : `<div class="price req">Price on request</div>`;
+  $("#buybox").innerHTML = unit ? `<div class="buyrow"><div class="qtybox"><button onclick="qtyStep(-1)" aria-label="Less">−</button><span id="q-now">${qtyNow}</span><button onclick="qtyStep(1)" aria-label="More">+</button></div><button class="btn btn-primary" id="add-btn" onclick="addToOrder(${p.id})">Add to order</button></div>`
+    : `<div class="quote">This piece is made to order, so the price depends on your requirements. Call or WhatsApp us on <a href="tel:+254${CONTACT_TEL.slice(1)}">${CONTACT_SHOW}</a> for a quote.</div>`;
 }
 function qtyStep(d) { qtyNow = Math.min(20, Math.max(1, qtyNow + d)); $("#q-now").textContent = qtyNow; }
 
@@ -501,13 +518,13 @@ function flyToCart(img) {
   requestAnimationFrame(() => requestAnimationFrame(() => Object.assign(f.style, { left: b.left + "px", top: b.top + "px", width: "30px", height: "30px", opacity: .2, transform: "rotate(25deg)" })));
   setTimeout(() => f.remove(), 850);
 }
-const cartEntries = () => Object.entries(cart).map(([k, v]) => ({ key: k, ...v, p: byId(v.id) })).filter((e) => e.p && Number.isInteger(e.p.price) && e.p.price > 0);
-const cartTotal = () => cartEntries().reduce((s, e) => s + e.p.price * e.qty, 0);
+const cartEntries = () => Object.entries(cart).map(([k, v]) => { const p = byId(v.id); return { key: k, ...v, p, unit: p ? unitPrice(p, v.options) : null }; }).filter((e) => e.p && Number.isInteger(e.unit) && e.unit > 0);
+const cartTotal = () => cartEntries().reduce((s, e) => s + e.unit * e.qty, 0);
 const jsq = (s) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 function renderCart() {
   const es = cartEntries(), qty = es.reduce((s, e) => s + e.qty, 0);
   $("#cart-count").textContent = qty;
-  $("#lines").innerHTML = es.length ? es.map((e, i) => `<div class="line" style="--i:${i}"><img src="${esc(e.p.images?.[0] || "")}" alt=""><div style="flex:1"><div class="n">${esc(e.p.name)}</div><div class="s">${esc(optText(e.options))}${optText(e.options) ? "<br>" : ""}${fmt(e.p.price)}</div><div class="qty"><button class="qb" onclick="cartQty('${jsq(e.key)}',-1)">−</button><span class="qn">${e.qty}</span><button class="qb" onclick="cartQty('${jsq(e.key)}',1)">+</button><button class="rm" onclick="cartQty('${jsq(e.key)}',-99)">remove</button></div></div></div>`).join("") : `<div class="empty">Your order is empty.<br>Choose a piece from the collections to begin.</div>`;
+  $("#lines").innerHTML = es.length ? es.map((e, i) => `<div class="line" style="--i:${i}"><img src="${esc(e.p.images?.[0] || "")}" alt=""><div style="flex:1"><div class="n">${esc(e.p.name)}</div><div class="s">${esc(optText(e.options))}${optText(e.options) ? "<br>" : ""}${fmt(e.unit)}</div><div class="qty"><button class="qb" onclick="cartQty('${jsq(e.key)}',-1)">−</button><span class="qn">${e.qty}</span><button class="qb" onclick="cartQty('${jsq(e.key)}',1)">+</button><button class="rm" onclick="cartQty('${jsq(e.key)}',-99)">remove</button></div></div></div>`).join("") : `<div class="empty">Your order is empty.<br>Choose a piece from the collections to begin.</div>`;
   $("#s-items").textContent = qty; $("#s-total").textContent = fmt(cartTotal());
   $("#place-btn").disabled = !es.length; $("#d-form").hidden = !es.length;
   store.set("ropa_form", { name: $("#c-name").value, phone: $("#c-phone").value, email: $("#c-email").value, area: $("#c-area").value, note: $("#c-note").value });

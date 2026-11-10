@@ -29,9 +29,29 @@ export async function updateJSON(s, key, fn, tries = 6) {
 }
 
 /* ---------- catalogue ---------- */
+// A choice can simply be a name, or carry a price: { name, price } sets the product's price when chosen,
+// { name, add } adds (or subtracts) an amount.
+export function normOptions(options) {
+  return (options || []).map((g) => ({
+    name: g.name,
+    values: (g.values || []).map((v) => typeof v === "string" ? { name: v } : { name: v.name, ...(Number.isInteger(v.price) && v.price > 0 ? { price: v.price } : {}), ...(Number.isInteger(v.add) && v.add !== 0 ? { add: v.add } : {}) }),
+  }));
+}
+export function priceFor(p, selected) {
+  let price = Number.isInteger(p.price) && p.price > 0 ? p.price : null, add = 0;
+  for (const g of p.options || []) {
+    const v = g.values.find((x) => x.name === selected?.[g.name]) || g.values[0];
+    if (!v) continue;
+    if (Number.isInteger(v.price) && v.price > 0) price = v.price;
+    if (Number.isInteger(v.add)) add += v.add;
+  }
+  return price === null ? null : price + add;
+}
 export async function getCatalog(s = store()) {
   const c = await s.get("catalog", { type: "json" });
-  return c && Array.isArray(c.products) ? c : structuredClone(seed);
+  const cat = c && Array.isArray(c.products) ? c : structuredClone(seed);
+  cat.products.forEach((p) => { p.options = normOptions(p.options); });
+  return cat;
 }
 export function publicCatalog(c) {
   const products = c.products.filter((p) => !p.hidden);

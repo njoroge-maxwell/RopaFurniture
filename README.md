@@ -30,7 +30,8 @@ https://ropa-furniture.netlify.app/.netlify/functions/paystack so payments are r
 ## Using the admin page (/admin.html)
 - Orders: see every order, search, filter by payment status, export to CSV. Open an order to record cash / M-Pesa / bank payments you received directly, add a delivery fee or discount, change the order status (New, In production, Ready, Delivered, Cancelled) and keep private notes.
 - "Send invoice on WhatsApp" / "Send receipt on WhatsApp" open a chat with the customer with the message already written; you tap send. (Sending automatically needs the WhatsApp Business API, which requires a verified business.)
-- Products: add a product (name, category, price, description, photos, choices, specifications). Type a new category name to create a new category. Choices are one per line, e.g.  Wood: Mango wood, Mahogany  and  Cord colour: Tan, Black. Leave the price empty to show "Price on request" (customers can't order it online until you set a price). "Hide" removes a product from the website without deleting it.
+- Products: add a product (name, category, price, description, photos, choices, specifications). Type a new category name to create a new category. Choices are one per line, e.g.  Wood: Mango wood, Mahogany  and  Cord colour: Tan, Black. Leave the price empty to show "Price on request" (customers can't order it online until you set a price).
+  A choice can also set or change the price. Write the amount after it: `Heater: Wood burner = 400000, Electric burner = 300000` makes the price depend on the heater (this is how the sauna works: leave the main price empty), and `Wood: Mango wood, Mahogany + 5000` adds KSh 5,000 when Mahogany is chosen (use `- 2000` to take money off). "Hide" removes a product from the website without deleting it.
 - Reviews: customers' reviews wait for your approval. You can also add a genuine review yourself.
 - Delete any test orders you made.
 
@@ -38,3 +39,7 @@ https://ropa-furniture.netlify.app/.netlify/functions/paystack so payments are r
 - Orders, products, photos you upload and reviews are stored in Netlify (Blobs, store "ropa-data").
 - The smallest custom online payment is KSh 100: change MIN_PAYMENT in index.html and netlify/functions/lib/db.mjs together.
 - Order numbers run 1001, 1002, ... (START in netlify/functions/lib/db.mjs).
+
+## Removing the "Powered by Netlify" badge
+Netlify -> your project -> Project configuration -> General -> "Powered by Netlify badge" -> switch it off -> Save.
+No redeploy is needed. This is free.

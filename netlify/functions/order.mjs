@@ -1,5 +1,5 @@
 // Public: place an order (POST) and look an order up by its private link token (GET).
-import { store, getCatalog, createOrder, getOrderByToken, publicOrder, json, readBody, rid, clean } from "./lib/db.mjs";
+import { store, getCatalog, priceFor, createOrder, getOrderByToken, publicOrder, json, readBody, rid, clean } from "./lib/db.mjs";
 
 export default async (req) => {
   try {
@@ -24,14 +24,16 @@ export default async (req) => {
     for (const it of b.items) {
       const p = catalog.products.find((x) => x.id === Number(it.id) && !x.hidden);
       const qty = Number(it.qty);
-      if (!p || !Number.isInteger(p.price) || p.price <= 0) return json({ error: "One of the items can't be ordered online. Please remove it and try again." }, 400);
+      if (!p) return json({ error: "One of the items is no longer available. Please remove it and try again." }, 400);
       if (!Number.isInteger(qty) || qty < 1 || qty > 20) return json({ error: "Invalid quantity." }, 400);
       const options = {};
-      for (const g of p.options || []) {                                           // only accept values the product really offers
+      for (const g of p.options || []) {                                           // only accept choices the product really offers
         const want = it.options && it.options[g.name];
-        options[g.name] = g.values.includes(want) ? want : g.values[0];
+        options[g.name] = (g.values.find((v) => v.name === want) || g.values[0]).name;
       }
-      items.push({ id: p.id, name: p.name, price: p.price, qty, options, image: p.images?.[0] || "" });
+      const price = priceFor(p, options);                                          // the server works out the price, never the browser
+      if (!Number.isInteger(price) || price <= 0) return json({ error: "One of the items can't be ordered online. Please remove it and try again." }, 400);
+      items.push({ id: p.id, name: p.name, price, qty, options, image: p.images?.[0] || "" });
     }
     const rec = await createOrder(s, {
       token: rid(12), createdAt: new Date().toISOString(),
