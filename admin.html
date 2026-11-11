@@ -98,12 +98,13 @@ td.r,th.r{text-align:right}
   <header><div class="bar">
     <div class="brand"><img src="images/logo.png" alt="">Ropa Furniture · Admin</div>
     <div class="tabs" id="tabs">
-      <button data-t="orders" class="on">Orders</button><button data-t="products">Products</button><button data-t="reviews">Reviews</button>
+      <button data-t="orders" class="on">Orders</button><button data-t="insights">Insights</button><button data-t="products">Products</button><button data-t="reviews">Reviews</button>
     </div>
     <button class="btn btn-g btn-s" style="color:var(--linen);border-color:var(--linen)" onclick="logout()">Log out</button>
   </div></header>
   <div class="main">
     <section id="t-orders"></section>
+    <section id="t-insights" hidden></section>
     <section id="t-products" hidden></section>
     <section id="t-reviews" hidden></section>
   </div>
@@ -138,10 +139,11 @@ $("#pw").addEventListener("keydown", (e) => e.key === "Enter" && login());
 document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => tab(b.dataset.t)));
 function tab(t) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === t));
-  ["orders", "products", "reviews"].forEach((x) => ($("#t-" + x).hidden = x !== t));
-  if (t === "orders") loadOrders(); if (t === "products") loadProducts(); if (t === "reviews") loadReviews();
+  ["orders", "insights", "products", "reviews"].forEach((x) => ($("#t-" + x).hidden = x !== t));
+  if (t === "orders") loadOrders(); if (t === "insights") loadInsights(); if (t === "products") loadProducts(); if (t === "reviews") loadReviews();
 }
-async function start() { $("#login").hidden = true; $("#app").hidden = false; tab("orders"); }
+async function start() { try { localStorage.setItem("ropa_owner", "1"); } catch (_) {}   // so your own visits to the shop are not counted
+  $("#login").hidden = true; $("#app").hidden = false; tab("orders"); }
 function modal(html) { $("#modal-host").innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><button class="x" onclick="closeModal()" aria-label="Close">✕</button>${html}</div></div>`; }
 function closeModal() { $("#modal-host").innerHTML = ""; }
 const payWord = { unpaid: "Awaiting payment", part: "Part paid", paid: "Paid" };
@@ -213,6 +215,30 @@ async function rmAdj(n, i) { try { await call({ action: "removeAdjustment", numb
 async function addPay(n) { try { await call({ action: "addPayment", number: n, amount: $("#pay-a").value, method: $("#pay-m").value, ref: $("#pay-r").value }); toast("Payment recorded"); again(n); } catch (e) { toast(e.message, 5000); } }
 async function rmPay(n, id) { if (!confirm("Remove this recorded payment?")) return; try { await call({ action: "removePayment", number: n, id }); again(n); } catch (e) { toast(e.message); } }
 async function delOrder(n) { if (!confirm(`Delete order #${n} permanently? This is meant for test orders.`)) return; try { await call({ action: "deleteOrder", number: n }); closeModal(); toast("Order deleted"); loadOrders(); } catch (e) { toast(e.message); } }
+
+/* ================= INSIGHTS ================= */
+let STATS_DAYS = 30;
+async function loadInsights() {
+  const box = $("#t-insights"); box.innerHTML = `<p class="small">Loading insights…</p>`;
+  let d; try { d = await call({ action: "getStats", days: STATS_DAYS }); } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const max = Math.max(1, ...d.series.map((x) => x.v)), t = d.totals, nice = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("en-KE", { day: "numeric", month: "short" });
+  const stat = (k, n, s) => `<div class="stat"><b>${n}</b><span>${k}</span>${s ? `<div class="small" style="margin-top:4px">${s}</div>` : ""}</div>`;
+  const table = (head, rows, empty) => rows.length ? `<div class="wrap-t"><table><thead><tr>${head.map((h, i) => `<th class="${i ? "r" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${i ? "r mono" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : `<p class="small">${empty}</p>`;
+  const pct = (n) => t.v ? Math.round(n / t.v * 100) + "%" : "";
+  box.innerHTML = `
+  <div class="tools"><select id="sd" style="max-width:180px"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select><button class="btn btn-g btn-s" onclick="loadInsights()">Refresh</button>
+    <span class="small">Counts are approximate. Your own visits (from this browser) are not counted. No cookies or personal details are collected.</span></div>
+  <div class="stats">${stat("Visits", t.v, "each time someone arrives")}${stat("Visitors", t.u, "different devices, per day")}${stat("Pages viewed", t.pv)}${stat("Orders", t.orders)}${stat("Visits that ordered", t.v ? (Math.round(t.orders / t.v * 1000) / 10) + "%" : "-")}</div>
+  <div class="box"><h3>Visits per day</h3>${t.v ? `<div style="display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:8px">${d.series.map((x) => `<div title="${nice(x.date)}: ${x.v} visits, ${x.pv} pages viewed" style="flex:1;background:${x.v ? "var(--amber)" : "var(--line)"};height:${Math.max(3, Math.round(x.v / max * 100))}%;border-radius:2px 2px 0 0"></div>`).join("")}</div><div class="row small" style="margin-top:4px"><span>${nice(d.series[0].date)}</span><span>most in one day: ${max}</span><span>${nice(d.series[d.series.length - 1].date)}</span></div>` : `<p class="small">No visits recorded yet. Counting starts from the day this version goes live.</p>`}</div>
+  <div class="grid2">
+   <div class="box"><h3>Most viewed products</h3>${table(["Product", "Views", "Added to order", "Ordered"], d.products.map((p) => [esc(p.name), p.views, p.adds, p.ordered]), "No product views yet.")}</div>
+   <div class="box"><h3>Most viewed collections</h3>${table(["Collection", "Views"], d.categories.map((c) => [esc(c.name), c.views]), "No collection views yet.")}</div>
+   <div class="box"><h3>Visitors by country</h3>${table(["Country", "Visits", "Share"], d.countries.map((c) => [esc(c.name), c.visits, pct(c.visits)]), "No visits yet.")}</div>
+   <div class="box"><h3>Visitors by city</h3>${table(["City", "Visits"], d.cities.map((c) => [esc(c.name), c.visits]), "No visits yet.")}</div>
+  </div>
+  <div class="box"><h3>Where visitors came from</h3>${table(["Website", "Visits"], d.refs.map((r) => [esc(r.name), r.visits]), "Most visits arrive directly (typed address, or a link from WhatsApp or an app, which don't pass on where they came from).")}</div>`;
+  $("#sd").value = String(STATS_DAYS); $("#sd").onchange = (e) => { STATS_DAYS = +e.target.value; loadInsights(); };
+}
 
 /* ================= PRODUCTS ================= */
 let CAT = { categories: [], products: [] };

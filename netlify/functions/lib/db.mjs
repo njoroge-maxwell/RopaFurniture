@@ -12,12 +12,14 @@ export const store = () => getStore({ name: "ropa-data", consistency: "strong" }
 export const json = (data, status = 200, headers = {}) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...headers } });
 export const readBody = async (req) => { try { return await req.json(); } catch { return {}; } };
+export const dayKey = (ms = Date.now()) => new Date(ms + 3 * 3600 * 1000).toISOString().slice(0, 10);   // days run on Nairobi time (UTC+3)
 export const rid = (bytes = 12) => crypto.randomBytes(bytes).toString("hex");
 export const clean = (v, max) => String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
 /* ---------- safe read-modify-write (retries if someone else changed it at the same moment) ---------- */
-export async function updateJSON(s, key, fn, tries = 6) {
+export async function updateJSON(s, key, fn, tries = 6, backoff = 0) {
   for (let i = 0; i < tries; i++) {
+    if (i > 0 && backoff) await new Promise((r) => setTimeout(r, Math.random() * backoff * i));   // small random pause so busy moments don't collide again
     const cur = await s.getWithMetadata(key, { type: "json" });
     if (!cur || cur.data == null) return null;
     const next = await fn(structuredClone(cur.data));

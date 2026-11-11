@@ -1,6 +1,8 @@
 // Owner-only: orders, payments, products, photos and reviews. Protected by the ADMIN_PASSWORD Netlify setting.
 import crypto from "node:crypto";
-import { store, json, readBody, rid, clean, updateJSON, getCatalog, listOrders, totalOf, paidOf, payStatus } from "./lib/db.mjs";
+import { store, json, readBody, rid, clean, updateJSON, getCatalog, listOrders, totalOf, paidOf, payStatus, dayKey } from "./lib/db.mjs";
+
+const slugOf = (s) => String(s).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 const sha = (v) => crypto.createHash("sha256").update(String(v)).digest();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -100,6 +102,27 @@ export default async (req) => {
         if (!o) return json({ error: "Order not found" }, 404);
         await s.delete(`order:${o.number}`); await s.delete(`tok:${o.token}`);
         return json({ ok: true });
+      }
+
+      case "getStats": {
+        const days = [7, 30, 90].includes(Number(b.days)) ? Number(b.days) : 30;
+        const keys = Array.from({ length: days }, (_, i) => dayKey(Date.now() - (days - 1 - i) * 86400000));
+        const docs = await Promise.all(keys.map((k) => s.get(`stats:${k}`, { type: "json" })));
+        const sum = (acc, o) => { for (const [k, n] of Object.entries(o || {})) acc[k] = (acc[k] || 0) + n; return acc; };
+        const tot = { v: 0, u: 0, pv: 0 }, products = {}, adds = {}, cats = {}, countries = {}, cities = {}, refs = {}, cn = {};
+        const series = keys.map((date, i) => { const d = docs[i] || {}; tot.v += d.v || 0; tot.u += d.u || 0; tot.pv += d.pv || 0; sum(products, d.products); sum(adds, d.adds); sum(cats, d.cats); sum(countries, d.countries); sum(cities, d.cities); sum(refs, d.refs); Object.assign(cn, d.cn); return { date, v: d.v || 0, pv: d.pv || 0 }; });
+        const catalog = await getCatalog(s), orders = (await listOrders(s)).filter((o) => o.fulfilment !== "cancelled" && dayKey(Date.parse(o.createdAt)) >= keys[0]);
+        const ordered = {}; orders.forEach((o) => o.items.forEach((i) => { ordered[i.id] = (ordered[i.id] || 0) + i.qty; }));
+        const top = (o, n = 10) => Object.entries(o).sort((a, c) => c[1] - a[1]).slice(0, n);
+        const ids = new Set([...Object.keys(products), ...Object.keys(adds), ...Object.keys(ordered)]);
+        return json({
+          days, totals: { ...tot, orders: orders.length }, series,
+          products: [...ids].map((id) => { const p = catalog.products.find((x) => String(x.id) === String(id)); return { id, name: p ? p.name : "Removed product #" + id, views: products[id] || 0, adds: adds[id] || 0, ordered: ordered[id] || 0 }; }).sort((a, c) => c.views - a.views || c.ordered - a.ordered).slice(0, 15),
+          categories: top(cats).map(([sl, n]) => ({ name: catalog.categories.find((c) => slugOf(c) === sl) || sl, views: n })),
+          countries: top(countries).map(([code, n]) => ({ code, name: cn[code] || code, visits: n })),
+          cities: top(cities).map(([name, n]) => ({ name, visits: n })),
+          refs: top(refs, 8).map(([name, n]) => ({ name, visits: n })),
+        });
       }
 
       case "getCatalog": return json(await getCatalog(s));

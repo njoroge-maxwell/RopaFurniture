@@ -326,6 +326,21 @@ async function api(fn, opts = {}, qs = "") {
 const post = (fn, body) => api(fn, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} } };
 
+/* ================= visit counting (private: totals only, no cookies, no personal data) ================= */
+function track(type, id) {
+  try {
+    if (navigator.doNotTrack === "1" || localStorage.getItem("ropa_owner")) return;   // respects "Do Not Track"; the owner's own visits (after logging in to admin) are not counted
+    const body = { type, id };
+    if (!sessionStorage.getItem("ropa_sess")) {
+      sessionStorage.setItem("ropa_sess", "1"); body.visit = true;
+      try { const h = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; if (h && h !== location.hostname) body.ref = h; } catch (_) {}
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem("ropa_seen") !== today) { localStorage.setItem("ropa_seen", today); body.newVisitor = true; }
+    }
+    fetch(API + "track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+  } catch (_) {}
+}
+
 /* ================= state ================= */
 let CATALOG = { categories: [], products: [] };
 let cart = store.get("ropa_cart_v2", {});            // key -> {id, qty, options}
@@ -367,11 +382,11 @@ async function route() {
   const h = location.hash.replace(/^#/, "") || "/";
   const [, a, b] = h.split("?")[0].split("/");
   window.scrollTo(0, 0);
-  if (a === "c" && b) return renderCategory(b);
-  if (a === "p" && b) return renderProduct(b);
+  if (a === "c" && b) { track("cat", b); return renderCategory(b); }
+  if (a === "p" && b) { track("product", b); return renderProduct(b); }
   if (a === "order" && b) return renderOrder(b);
   if (a === "orders") return renderMyOrders();
-  return renderHome();
+  track("home"); return renderHome();
 }
 addEventListener("hashchange", route);
 
@@ -505,7 +520,7 @@ function qtyStep(d) { qtyNow = Math.min(20, Math.max(1, qtyNow + d)); $("#q-now"
 function addToOrder(id) {
   const options = { ...(sel[id] || {}) }, key = id + "|" + optKey(options);
   cart[key] = { id, options, qty: Math.min(20, (cart[key]?.qty || 0) + qtyNow) };
-  saveCart(); renderCart();
+  saveCart(); renderCart(); track("add", id);
   const btn = $("#add-btn"); if (btn) { btn.textContent = "Added ✓"; setTimeout(() => (btn.textContent = "Add to order"), 1300); }
   flyToCart($("#gal-img"));
   const c = $("#cart-count"); c.classList.remove("pop"); void c.offsetWidth; c.classList.add("pop");
